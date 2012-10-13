@@ -1,0 +1,12 @@
+tenorintro = \relative f { 
+	\partial 2 b2 | b4 a g a      | g2 g4 ( fis ) | g2 
+}
+tenor = \relative f { 
+	\partial 2 b2 | b4 a g a      | g2 g4 ( fis ) | g2 fis      |
+	g4 g a b      | c2 d          | d b           | d4 d c b    |
+	g ( a ) b2    | b a           | b4 b c e      | d2 d4 ( c ) |
+	b1
+}
+tenoramen = \relative f { 
+	c'1            | b
+}

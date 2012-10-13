@@ -1,0 +1,343 @@
+#!/bin/sh
+
+DEBUG=true
+set -x
+
+# Make sure all the template files are present
+for i in soprano alto tenor bass variables; do
+	if [ ! -f "$i" ] ; then exit 0; fi
+done
+
+# Read in the variables
+. ./variables
+
+for i in "" -soprano -alto -tenor -bass; do
+	if [ ! -d "../../MP3${i}/${SOURCE}" ] ; then mkdir -p "../../MP3${i}/${SOURCE}"; fi
+done
+
+if [ "${SOURCEPAGE}" != "nil" ] ; then
+SOURCEPAGE2=$(printf "%03d" ${SOURCEPAGE})
+fi
+
+# Process command line options
+while test "$1" != ""; do
+  case "$1" in
+  debug)
+    DEBUG=true
+    ;;
+  clean)
+    rm -f *.wav *.midi *.ly *.ps *.mp3 *.pdf *.ogg
+    ;;
+  *)
+    echo Unknown command: $1
+    exit 2
+    ;;
+  esac
+  shift 
+done
+
+if [ ${DEBUG} = true ] ; then STANZAS=1; fi
+
+# Make a PDF in piano and in choral style
+
+pianoparts () {
+	printf "\t\\\new Staff << \\global \\clef treble \\\transpose ${TRANSPOSE} \\partcombine { \\soprano \\sopranoamen } { \\\alto \\\altoamen } >>\n" ;
+	printf "\t\\\new Staff << \\global \\clef bass \\\transpose ${TRANSPOSE} \\partcombine { \\\tenor \\\tenoramen } { \\\bass \\\bassamen } >>\n" ;
+}
+
+choirparts () {
+	if [ -f words ] ; then
+	printf "\t\\\new Staff << \\\new Voice = sopvox { \\\voiceOne \\global \\clef treble \\\transpose ${TRANSPOSE} { \\soprano \\sopranoamen } }\n\t\t\\\new Voice = altvox { \\\voiceTwo \\\transpose ${TRANSPOSE} { \\\alto \\\altoamen } } >>\n" ;
+	printf "\t\\\new Lyrics \\Words\n";
+	else
+	printf "\t\\\new Staff << \\global \\clef treble \\\transpose ${TRANSPOSE} { \\soprano \\sopranoamen } \\\\\ \\\transpose ${TRANSPOSE} { \\\alto \\\altoamen } >>\n" ;
+	fi
+	printf "\t\\\new Staff << \\\new Voice = tnrvox { \\\voiceOne \\global \\clef bass \\\transpose ${TRANSPOSE} { \\\tenor \\\tenoramen } }\n\t\t\\\new Voice = bssvox { \\\voiceTwo \\\transpose ${TRANSPOSE} { \\\bass \\\bassamen } } >>\n" ;
+}
+
+printheader () {
+	printf "\\\version \"${LILYVERSION}\"\n\n"
+	if [ "${SOURCEPAGE}" != "nil" ] ; then
+	printf "\\\header {\n\ttitle = \"${SOURCEPAGE}. ${TITLE}\"\n"
+	else
+	printf "\\\header {\n\ttitle = \"${TITLE}\"\n"
+	fi
+	printf "\tpoet = \"${POET}\"\n"
+	printf "\tcomposer = \"${COMPOSER}\"\n"
+	printf "\tarranger = \"${ARRANGER}\"\n"
+	printf "\ttranslator = \"${TRANSLATOR}\"\n"
+#	printf "\ttagline = \"Reactor Core Hymn Repository\"\n"
+	printf "\ttagline = \\markup { \\\fill-line { \\with-url #\"http://creativecommons.org/licenses/by/2.5/ca/\" \"License: Creative Commons Attribution 2.5\" \"Reactor Core Hymn Repository\" \\with-url #\"http://hymns.reactor-core.org/\" \"http://hymns.reactor-core.org/\" } }\n"
+	printf "\tsource = \"${SOURCE}\"\n}\n\n"
+	printf "#(set-global-staff-size 14)\n"
+	#printf "#(set-default-paper-size \"letter\" 'portrait)\n\n"
+	#printf "\\\paper {\n\tpagenumber = no\n\tlinewidth = 120\\mm\n\tindent = 0\\mm\n}\n\n"
+	printf "global = {\n\t\\\key ${KEY} \\${KEYMODE}\n\t\\\time ${TIME}\n\t\\\set Staff.printPartCombineTexts = ##f\n}\n\n"
+}
+
+makepdf () {
+	export pcombi="$1";
+	(
+	printheader;
+	cat soprano alto tenor bass;
+	if [ -f words ] ; then cat words; fi
+	printf "\\score { \\\new ChoirStaff << \n";
+	if [ "X${pcombi}" = "Xpianoscore" ] ; then pianoparts; elif [ "X${pcombi}" = "Xchoirscore" ] ; then choirparts; fi
+	printf "\t>>\n";
+	printf "\t\\layout {\n";
+	printf "\t\t\\context { \\Score \\override MetronomeMark #'transparent = ##t }\n";
+	printf "\t\t\\context { \\Score \\\remove \"Bar_number_engraver\" }\n";
+	printf "\t\t\\context { \\ChoirStaff \\\accepts \"Lyrics\" }\n";
+	printf "\t\t\\context {\n\t\t\t\\Lyrics \\override LyricSpace #'minimum-distance = #1.2\n\t\t\t\\override LyricText #'self-alignment-X = #LEFT\n\t\t\t\\consists \"Bar_engraver\"\n\t\t\t\\consists \"Separating_line_group_engraver\"\n\t\t\t\\override BarLine #'transparent = ##t\n\t\t}\n";
+	printf "\t}";
+	printf "\n}";
+	printf "\n" ;
+	) > "${TITLE}.pdf.ly"
+	lilypond --pdf -o "${TITLE}" "${TITLE}.pdf.ly" 2>/dev/null;
+}
+
+makepng () {
+  lilysource="${TITLE}.png.ly"
+	export pcombi="$1";
+	(
+	printheader;
+	cat soprano alto tenor bass;
+	if [ -f words ] ; then cat words; fi
+	printf "\\score { \\\new ChoirStaff << \n";
+	if [ "X${pcombi}" = "Xpianoscore" ] ; then pianoparts; elif [ "X${pcombi}" = "Xchoirscore" ] ; then choirparts; fi
+	#printf "\t>>\n";
+	#printf "\t\\layout {\n";
+	#printf "\t\t\\context { \\Score \\override MetronomeMark #'transparent = ##t }\n";
+	#printf "\t\t\\context { \\Score \\\remove \"Bar_number_engraver\" }\n";
+	#printf "\t\t\\context { \\ChoirStaff \\\accepts \"Lyrics\" }\n";
+	#printf "\t\t\\context {\n\t\t\t\\Lyrics \\override LyricSpace #'minimum-distance = #1.2\n\t\t\t\\override LyricText #'self-alignment-X = #LEFT\n\t\t\t\\consists \"Bar_engraver\"\n\t\t\t\\consists \"Separating_line_group_engraver\"\n\t\t\t\\override BarLine #'transparent = ##t\n\t\t}\n";
+	#printf "\t}";
+	#printf "\n}";
+	#printf "\n" ;
+  cat <<EOT
+  %% Hello world! ${TITLE}
+  >>
+  \layout {
+    \context { \Score \override MetronomeMark #'transparent = ##t }
+    \context { \Score \remove \"Bar_number_engraver\" }
+    \context { \ChoirStaff \accepts "Lyrics" }
+     \context {
+      \Lyrics
+         \override LyricSpace #'minimum-distance = #1.2
+         \override LyricText #'self-alignment-X = #LEFT
+         \consists \"Bar_engraver\"
+         \consists \"Separating_line_group_engraver\"
+         \override BarLine #'transparent = ##t
+      }
+    }
+  }
+  \paper {
+    indent=0\mm
+    line-width=120\mm
+    oddFooterMarkup=##f
+    oddHeaderMarkup=##f
+    bookTitleMarkup=##f
+    scoreTitleMarkup=##f
+  }
+
+EOT
+	) > ${lilysource}
+	lilypond --png -dbackend=eps -dno-gs-load-fonts -dinclude-eps-fonts -o "${TITLE}" $lilysource 2>/dev/null;
+}
+
+makepdf choirscore
+makepng choirscore
+if [ ${DEBUG} = true ] ; then xpdf -z width *.pdf & fi;
+#makepdf pianoscore;
+
+# Make an mp3 of the combined parts
+
+(
+printheader;
+cat soprano alto tenor bass;
+printf "\\score { << \n";
+for i in '\\soprano' '\\alto' '\\tenor' '\\bass'; do
+	printf "\t\t\\\new Staff { \\global ${TEMPO} \\unfoldRepeats { \\\transpose ${TRANSPOSE} { ${i}intro ${PAUSE} ${TEMPO} \\\repeat unfold ${STANZAS} { $i ${PAUSE} ${TEMPO} } ${i}amen ${PAUSE}} } }\n";
+done
+printf "\t>>\n";
+printf "\t\\midi {\n";
+printf "\t\t\\context { \\Staff midiInstrument = #\"${INSTRUMENT}\" }\n"
+printf "\t}";
+printf "\n}";
+printf "\n" ;
+) > "${TITLE}.midi.ly"
+lilypond -o "${TITLE}" "${TITLE}.midi.ly" 2>/dev/null;
+if [ ${DEBUG} = true ] ; then timidity "${TITLE}.midi" ; exit; fi
+    timidity -OwM -s 22050 -idq -o "${TITLE}.wav" "${TITLE}.midi" >/dev/null
+if [ "${SOURCEPAGE}" != "nil" ] ; then
+    rm -f "../../MP3/${SOURCE}/${SOURCEPAGE2}. ${TITLE}.mp3";
+    lame --quiet -m m -q 2 --vbr-new --id3v2-only --tt "${SOURCEPAGE2}. ${TITLE}" --ta "Reactor Core Hymn Repository" --tl "${SOURCE}" "${TITLE}.wav" "../../MP3/${SOURCE}/${SOURCEPAGE2}. ${TITLE}.mp3"
+else
+    rm -f "../../MP3/all/${TITLE}.mp3";
+    lame --quiet -m m -q 2 --vbr-new --id3v2-only --tt "${TITLE}" --ta "Reactor Core Hymn Repository" --tl "${SOURCE}" "${TITLE}.wav" "../../MP3/all/${TITLE}.mp3"
+fi
+#if [ ${DEBUG} = true ] ; then mpg123 "../../MP3/${SOURCE}/${SOURCEPAGE2}. ${TITLE}.mp3"; fi
+
+# Make an mp3 of each part
+
+if [ ${DEBUG} = false ] ; then
+	for i in '\\soprano' '\\alto' '\\tenor' '\\bass'; do
+		ii=$(echo $i|sed 's/^..//');
+		(
+               printheader;
+		cat soprano alto tenor bass;
+		printf "\\score { << \n";
+		printf "\t\t\\\new Staff { \\global \\\transpose ${TRANSPOSE} { ${TEMPO} ${i}intro ${PAUSE} ${TEMPO} \\\repeat unfold ${STANZAS} { $i ${PAUSE} ${TEMPO}  } ${i}amen ${PAUSE} } }\n";
+		printf "\t>>\n";
+		printf "\t\\midi {\n";
+		printf "\t\t\\context { \\Staff midiInstrument = #\"${INSTRUMENT}\" }\n";
+		printf "\t}";
+		printf "\n}";
+		printf "\n" ;
+		) > "${TITLE}.${ii}.ly"
+
+		lilypond "${TITLE}.${ii}.ly"  2>/dev/null;
+		timidity -OwM -s 22050 -idq -o "${TITLE}.${ii}.wav" "${TITLE}.${ii}.midi" >/dev/null
+if [ "${SOURCEPAGE}" != "nil" ] ; then
+		lame --quiet -m m -q 2 --vbr-new  --id3v2-only --tt "${SOURCEPAGE2}. ${TITLE}" --ta "Reactor Core Hymn Repository" --tl "${SOURCE}" "${TITLE}.${ii}.wav" "../../MP3-${ii}/${SOURCE}/${SOURCEPAGE2}. ${TITLE}.mp3"
+else
+		lame --quiet -m m -q 2 --vbr-new --id3v2-only --tt "${TITLE}" --ta "Reactor Core Hymn Repository" --tl "${SOURCE}" "${TITLE}.${ii}.wav" "../../MP3-${ii}/all/${TITLE}.mp3"
+fi
+	done
+fi
+
+if [ ${DEBUG} = false ] ; then rm -f *.wav *.ly *.ps; fi
+
+
+exit 0
+
+# The available instruments
+
+#"accordion"
+#"acoustic bass"
+#"acoustic grand"
+#"acoustic guitar (nylon)"
+#"acoustic guitar (steel)"
+#"agogo"
+#"alto sax"
+#"applause"
+#"bagpipe"
+#"banjo"
+#"baritone sax"
+#"bassoon"
+#"bird tweet"
+#"blown bottle"
+#"brass section"
+#"breath noise"
+#"bright acoustic"
+#"celesta"
+#"cello"
+#"choir aahs"
+#"church organ"
+#"clarinet"
+#"clav"
+#"concertina"
+#"contrabass"
+#"distorted guitar"
+#"drawbar organ"
+#"dulcimer"
+#"electric bass (finger)"
+#"electric bass (pick)"
+#"electric grand"
+#"electric guitar (clean)"
+#"electric guitar (jazz)"
+#"electric guitar (muted)"
+#"electric piano 1"
+#"electric piano 2"
+#"english horn"
+#"fiddle"
+#"flute"
+#"french horn"
+#"fretless bass"
+#"fx 1 (rain)"
+#"fx 2 (soundtrack)"
+#"fx 3 (crystal)"
+#"fx 4 (atmosphere)"
+#"fx 5 (brightness)"
+#"fx 6 (goblins)"
+#"fx 7 (echoes)"
+#"fx 8 (sci-fi)"
+#"glockenspiel"
+#"guitar fret noise"
+#"guitar harmonics"
+#"gunshot"
+#"harmonica"
+#"harpsichord"
+#"helicopter"
+#"honky-tonk"
+#"kalimba"
+#"koto"
+#"lead 1 (square)"
+#"lead 2 (sawtooth)"
+#"lead 3 (calliope)"
+#"lead 4 (chiff)"
+#"lead 5 (charang)"
+#"lead 6 (voice)"
+#"lead 7 (fifths)"
+#"lead 8 (bass+lead)"
+#"marimba"
+#"melodic tom"
+#"music box"
+#"muted trumpet"
+#"oboe"
+#"ocarina"
+#"orchestra hit"
+#"orchestral strings"
+#"overdriven guitar"
+#"pad 1 (new age)"
+#"pad 2 (warm)"
+#"pad 3 (polysynth)"
+#"pad 4 (choir)"
+#"pad 5 (bowed)"
+#"pad 6 (metallic)"
+#"pad 7 (halo)"
+#"pad 8 (sweep)"
+#"pan flute"
+#"percussive organ"
+#"piccolo"
+#"pizzicato strings"
+#"recorder"
+#"reed organ"
+#"reverse cymbal"
+#"rock organ"
+#"seashore"
+#"shakuhachi"
+#"shamisen"
+#"shanai"
+#"sitar"
+#"slap bass 1"
+#"slap bass 2"
+#"soprano sax"
+#"steel drums"
+#"string ensemble 1"
+#"string ensemble 2"
+#"synth bass 1"
+#"synth bass 2"
+#"synth drum"
+#"synth voice"
+#"synthbrass 1"
+#"synthbrass 2"
+#"synthstrings 1"
+#"synthstrings 2"
+#"taiko drum"
+#"telephone ring"
+#"tenor sax"
+#"timpani"
+#"tinkle bell"
+#"tremolo strings"
+#"trombone"
+#"trumpet"
+#"tuba"
+#"tubular bells"
+#"vibraphone"
+#"viola"
+#"violin"
+#"voice oohs"
+#"whistle"
+#"woodblock"
+#"xylophone"

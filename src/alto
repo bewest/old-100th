@@ -1,0 +1,12 @@
+altointro = \relative g' { 
+	\partial 2 d2 | e4 d b a       | b4 ( c ) d2 | d 
+}
+alto = \relative g' { 
+	\partial 2 d2 | e4 d b a       | b4 ( c ) d2 | d dis      |
+	e4 cis dis e  |  e4 ( fis ) g2 | fis e       | fis4 g e d |
+	c2 e4 ( dis ) | e2 f           | fis4 e e a  | g2 fis     |
+	g1
+} 
+altoamen = \relative g' { 
+	e1             | d
+} 

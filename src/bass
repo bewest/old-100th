@@ -1,0 +1,12 @@
+bassintro = \relative f {
+	\partial 2 g,2 | c4 d e fis    | e2 d       | g,
+}
+bass = \relative f {
+	\partial 2 g,2 | c4 d e fis    | e2 d       | g, b       |
+	e4 g fis e     | a,2 b4 ( c )  | d2 e       | d4 g, a b  |
+	c2 b           | e d           | dis4 e c a | b ( c ) d2 |
+	g1
+}
+bassamen = \relative f {
+	c1           | g
+}

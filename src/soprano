@@ -1,0 +1,12 @@
+sopranointro = \relative g' { 
+	\partial 2 g2 | g4 fis e d    | g2 a     | b 
+}
+soprano = \relative g' { 
+	\partial 2 g2 | g4 fis e d    | g2 a     | b b       |
+	b4 b a g      | c2 b          | a g      | a4 b a g  |
+	e2 fis        | g d'          | b4 g a c | b2 a      |
+	g1 \bar "||"
+}
+sopranoamen = \relative g' { 
+	g1            | g \bar "|."
+}
