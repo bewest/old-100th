@@ -1,17 +1,17 @@
-ARRANGER=""
-COMPOSER=""
+ARRANGER="Ben West"
+COMPOSER="Loys Bourgeois (c.1510 – c.1560)"
 INSTRUMENT="church organ"
 KEY="g"
 KEYMODE="major"
 LILYVERSION="2.11.32"
 PAUSE='\\tempo 4=127 s2'
 POET=""
-SOURCE="A Christian-Israelite Hymn Book"
-SOURCEPAGE="3"
+SOURCE="Pseaumes Octante Trois de David (1551)"
+SOURCEPAGE="100"
 STANZAS="1"
 TEMPO='\\tempo 4=110'
 TIME="4/4"
-TITLE="Doxology"
+TITLE="Old 100th"
 TRANSLATOR=""
 TRANSPOSE="g g"
 

@@ -1,16 +1,24 @@
 \version "2.11.32"
 
 \header {
-	title = "3. Doxology"
+	title = "100. Old 100th"
 	poet = ""
-	composer = ""
-	arranger = ""
+	composer = "Loys Bourgeois (c.1510 – c.1560)"
+	arranger = "Ben West"
 	translator = ""
 	tagline = \markup { \fill-line { \with-url #"http://creativecommons.org/licenses/by/2.5/ca/" "License: Creative Commons Attribution 2.5" "Reactor Core Hymn Repository" \with-url #"http://hymns.reactor-core.org/" "http://hymns.reactor-core.org/" } }
-	source = "A Christian-Israelite Hymn Book"
+	source = "Pseaumes Octante Trois de David (1551)"
 }
 
 #(set-global-staff-size 14)
+#(set-default-paper-size "letter" 'portrait)
+
+\paper {
+	pagenumber = no
+	linewidth = 120\mm
+	indent = 0\mm
+}
+
 global = {
 	\key g \major
 	\time 4/4
@@ -65,21 +73,48 @@ bass = \relative f {
 bassamen = \relative f {
 	c1           | g
 }
+Words = <<
+\lyricsto "sopvox" \context Lyrics = a { \set stanza = "1. "
+}
+\lyricsto "sopvox" \context Lyrics = b { \set stanza = "2. "
+}
+\lyricsto "sopvox" \context Lyrics = c { \set stanza = "3. "
+}
+\lyricsto "sopvox" \context Lyrics = d { \set stanza = "4. "
+}
+\lyricsto "sopvox" \context Lyrics = e { \set stanza = "5. "
+}
+\lyricsto "sopvox" \context Lyrics = f { \set stanza = "6. "
+}
+>>
 \score { \new ChoirStaff << 
-	\new Staff << \global \clef treble \transpose g g { \soprano \sopranoamen } \\ \transpose g g { \alto \altoamen } >>
+	\new Staff << \new Voice = sopvox { \voiceOne \global \clef treble \transpose g g { \soprano \sopranoamen } }
+		\new Voice = altvox { \voiceTwo \transpose g g { \alto \altoamen } } >>
+	\new Lyrics \Words
 	\new Staff << \new Voice = tnrvox { \voiceOne \global \clef bass \transpose g g { \tenor \tenoramen } }
 		\new Voice = bssvox { \voiceTwo \transpose g g { \bass \bassamen } } >>
-	>>
-	\layout {
-		\context { \Score \override MetronomeMark #'transparent = ##t }
-		\context { \Score \remove "Bar_number_engraver" }
-		\context { \ChoirStaff \accepts "Lyrics" }
-		\context {
-			\Lyrics \override LyricSpace #'minimum-distance = #1.2
-			\override LyricText #'self-alignment-X = #LEFT
-			\consists "Bar_engraver"
-			\consists "Separating_line_group_engraver"
-			\override BarLine #'transparent = ##t
-		}
-	}
-}
+  %% Old 100th - generated automatically by ../genly
+  >>
+  \layout {
+    \context { \Score \override MetronomeMark #'transparent = ##t }
+    \context { \Score \remove "Bar_number_engraver" }
+    \context { \ChoirStaff \accepts "Lyrics" }
+     \context {
+      \Lyrics
+         \override LyricSpace #'minimum-distance = #1.2
+         \override LyricText #'self-alignment-X = #LEFT
+         \consists "Bar_engraver"
+         \consists "Separating_line_group_engraver"
+         \override BarLine #'transparent = ##t
+      }
+    }
+  }
+  \paper {
+    indent=0.1\mm
+    line-width=120\mm
+    oddFooterMarkup=##f
+    %% oddHeaderMarkup=##f
+    %% bookTitleMarkup=##f
+    %% scoreTitleMarkup=##f
+  }
+

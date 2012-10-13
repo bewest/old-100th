@@ -1,0 +1,14 @@
+Words = <<
+\lyricsto "sopvox" \context Lyrics = a { \set stanza = "1. "
+}
+\lyricsto "sopvox" \context Lyrics = b { \set stanza = "2. "
+}
+\lyricsto "sopvox" \context Lyrics = c { \set stanza = "3. "
+}
+\lyricsto "sopvox" \context Lyrics = d { \set stanza = "4. "
+}
+\lyricsto "sopvox" \context Lyrics = e { \set stanza = "5. "
+}
+\lyricsto "sopvox" \context Lyrics = f { \set stanza = "6. "
+}
+>>
