@@ -73,20 +73,20 @@ bassamen = \relative f {
   >>
   \layout {
     \context { \Score \override MetronomeMark #'transparent = ##t }
-    \context { \Score \remove \"Bar_number_engraver\" }
+    \context { \Score \remove Bar_number_engraver }
     \context { \ChoirStaff \accepts "Lyrics" }
      \context {
       \Lyrics
          \override LyricSpace #'minimum-distance = #1.2
          \override LyricText #'self-alignment-X = #LEFT
-         \consists \"Bar_engraver\"
-         \consists \"Separating_line_group_engraver\"
+         \consists Bar_engraver
+         \consists "Separating_line_group_engraver"
          \override BarLine #'transparent = ##t
       }
     }
   }
   \paper {
-    indent=0\mm
+    indent=0.1\mm
     line-width=120\mm
     oddFooterMarkup=##f
     oddHeaderMarkup=##f
