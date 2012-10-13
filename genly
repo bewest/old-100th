@@ -1,7 +1,7 @@
 #!/bin/sh
 
-DEBUG=true
-set -x
+DEBUG=false
+#set -x
 
 # Make sure all the template files are present
 for i in soprano alto tenor bass variables; do
@@ -10,6 +10,7 @@ done
 
 # Read in the variables
 . ./variables
+BUILD_PREFIX=${BUILD_PREFIX-.}
 
 for i in "" -soprano -alto -tenor -bass; do
 	if [ ! -d "../../MP3${i}/${SOURCE}" ] ; then mkdir -p "../../MP3${i}/${SOURCE}"; fi
@@ -76,6 +77,8 @@ printheader () {
 }
 
 makepdf () {
+  output="${TITLE}"
+  lilysource="${TITLE}.pdf.ly"
 	export pcombi="$1";
 	(
 	printheader;
@@ -92,8 +95,8 @@ makepdf () {
 	printf "\t}";
 	printf "\n}";
 	printf "\n" ;
-	) > "${TITLE}.pdf.ly"
-	lilypond --pdf -o "${TITLE}" "${TITLE}.pdf.ly" 2>/dev/null;
+	) > "${lilysource}"
+	lilypond --pdf -o "${output}" "${lilysource}" 2>/dev/null;
 }
 
 safetitle () {
@@ -149,7 +152,22 @@ makepng choirscore
 if [ ${DEBUG} = true ] ; then xpdf -z width *.pdf & fi;
 #makepdf pianoscore;
 
+
+makemp3 () {
+  output="${TITLE}"
+  lilysource="${TITLE}.midi.ly"
+  wav_out="${WAV_OUT-${output}.wav}"
+  midi_out="${MIDI_OUT-${output}.midi}"
+  mp3_out="${MP3_OUT-${output}.mp3}"
+  LAME=$(which lame)
+  TIMIDITY=$(which timidity)
 # Make an mp3 of the combined parts
+if [ -f $LAME && -x $LAME && -f $TIMIDITY && -x $TIMIDITY ] ; then
+  echo "Making mp3/midis.";
+else
+  echo "NOT making mp3/midis."
+  return 1;
+fi
 
 (
 printheader;
@@ -164,23 +182,24 @@ printf "\t\t\\context { \\Staff midiInstrument = #\"${INSTRUMENT}\" }\n"
 printf "\t}";
 printf "\n}";
 printf "\n" ;
-) > "${TITLE}.midi.ly"
-lilypond -o "${TITLE}" "${TITLE}.midi.ly" 2>/dev/null;
-if [ ${DEBUG} = true ] ; then timidity "${TITLE}.midi" ; exit; fi
-    timidity -OwM -s 22050 -idq -o "${TITLE}.wav" "${TITLE}.midi" >/dev/null
+) > "${lilysource}"
+lilypond -o "${output}" "${lilysource}" 2>/dev/null;
+if [ ${DEBUG} = true ] ; then $TIMIDITY "${midi_out}" ; exit; fi
+    $TIMIDITY -OwM -s 22050 -idq -o "${wav_out}" "${midi_out}" >/dev/null
 if [ "${SOURCEPAGE}" != "nil" ] ; then
-    rm -f "../../MP3/${SOURCE}/${SOURCEPAGE2}. ${TITLE}.mp3";
-    lame --quiet -m m -q 2 --vbr-new --id3v2-only --tt "${SOURCEPAGE2}. ${TITLE}" --ta "Reactor Core Hymn Repository" --tl "${SOURCE}" "${TITLE}.wav" "../../MP3/${SOURCE}/${SOURCEPAGE2}. ${TITLE}.mp3"
+    rm -f "../../MP3/${SOURCE}/${SOURCEPAGE2}. ${mp3_out}";
+    $LAME --quiet -m m -q 2 --vbr-new --id3v2-only --tt "${SOURCEPAGE2}. ${TITLE}" --ta "Reactor Core Hymn Repository" --tl "${SOURCE}" "${TITLE}.wav" "../../MP3/${SOURCE}/${SOURCEPAGE2}. ${TITLE}.mp3"
 else
     rm -f "../../MP3/all/${TITLE}.mp3";
-    lame --quiet -m m -q 2 --vbr-new --id3v2-only --tt "${TITLE}" --ta "Reactor Core Hymn Repository" --tl "${SOURCE}" "${TITLE}.wav" "../../MP3/all/${TITLE}.mp3"
+    $LAME --quiet -m m -q 2 --vbr-new --id3v2-only --tt "${TITLE}" --ta "Reactor Core Hymn Repository" --tl "${SOURCE}" "${wav_out}" "../../MP3/all/${TITLE}.mp3"
 fi
-#if [ ${DEBUG} = true ] ; then mpg123 "../../MP3/${SOURCE}/${SOURCEPAGE2}. ${TITLE}.mp3"; fi
+#if [ ${DEBUG} = true ] ; then mpg123 "../../MP3/${SOURCE}/${SOURCEPAGE2}. ${mp3_out}"; fi
 
 # Make an mp3 of each part
 
 if [ ${DEBUG} = false ] ; then
 	for i in '\\soprano' '\\alto' '\\tenor' '\\bass'; do
+    source_part_ly="${output}.${ii}.ly"
 		ii=$(echo $i|sed 's/^..//');
 		(
                printheader;
@@ -193,17 +212,20 @@ if [ ${DEBUG} = false ] ; then
 		printf "\t}";
 		printf "\n}";
 		printf "\n" ;
-		) > "${TITLE}.${ii}.ly"
+		) > "${source_part_ly}"
 
-		lilypond "${TITLE}.${ii}.ly"  2>/dev/null;
-		timidity -OwM -s 22050 -idq -o "${TITLE}.${ii}.wav" "${TITLE}.${ii}.midi" >/dev/null
+		lilypond "${source_part_ly}"  2>/dev/null;
+		$TIMIDITY -OwM -s 22050 -idq -o "${TITLE}.${ii}.wav" "${TITLE}.${ii}.midi" >/dev/null
 if [ "${SOURCEPAGE}" != "nil" ] ; then
-		lame --quiet -m m -q 2 --vbr-new  --id3v2-only --tt "${SOURCEPAGE2}. ${TITLE}" --ta "Reactor Core Hymn Repository" --tl "${SOURCE}" "${TITLE}.${ii}.wav" "../../MP3-${ii}/${SOURCE}/${SOURCEPAGE2}. ${TITLE}.mp3"
+		$LAME --quiet -m m -q 2 --vbr-new  --id3v2-only --tt "${SOURCEPAGE2}. ${TITLE}" --ta "Reactor Core Hymn Repository" --tl "${SOURCE}" "${TITLE}.${ii}.wav" "../../MP3-${ii}/${SOURCE}/${SOURCEPAGE2}. ${TITLE}.mp3"
 else
-		lame --quiet -m m -q 2 --vbr-new --id3v2-only --tt "${TITLE}" --ta "Reactor Core Hymn Repository" --tl "${SOURCE}" "${TITLE}.${ii}.wav" "../../MP3-${ii}/all/${TITLE}.mp3"
+		$LAME --quiet -m m -q 2 --vbr-new --id3v2-only --tt "${TITLE}" --ta "Reactor Core Hymn Repository" --tl "${SOURCE}" "${TITLE}.${ii}.wav" "../../MP3-${ii}/all/${TITLE}.mp3"
 fi
 	done
 fi
+}
+
+makemp3 
 
 if [ ${DEBUG} = false ] ; then rm -f *.wav *.ly *.ps; fi
 
