@@ -1,2 +1,0 @@
-@image{Doxology-1}
-@c eof
